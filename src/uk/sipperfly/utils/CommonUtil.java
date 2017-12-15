@@ -533,8 +533,6 @@ public class CommonUtil {
                 StreamResult result = new StreamResult(new File(path + File.separator + name));
                 transformer.transform(source, result);
             }
-        } catch (ParserConfigurationException ex) {
-            Logger.getLogger(CommonUtil.class.getName()).log(Level.SEVERE, null, ex);
         } catch (Exception ex) {
             Logger.getLogger(CommonUtil.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -704,18 +702,6 @@ public class CommonUtil {
             }
             message = message + "Successfully imported xml";
 
-        } catch (ParserConfigurationException ex) {
-            Logger.getLogger(CommonUtil.class.getName()).log(Level.SEVERE, null, ex);
-            return "";
-        } catch (SAXParseException ex) {
-            Logger.getLogger(CommonUtil.class.getName()).log(Level.SEVERE, null, ex);
-            return "";
-        } catch (SAXException ex) {
-            Logger.getLogger(CommonUtil.class.getName()).log(Level.SEVERE, null, ex);
-            return "";
-        } catch (IOException ex) {
-            Logger.getLogger(CommonUtil.class.getName()).log(Level.SEVERE, null, ex);
-            return "";
         } catch (Exception ex) {
             Logger.getLogger(CommonUtil.class.getName()).log(Level.SEVERE, null, ex);
             return "";

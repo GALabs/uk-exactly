@@ -40,10 +40,6 @@ class CopyDirVisitor extends SimpleFileVisitor<Path> {
 	private final Exactly parent;
 	private final Path fromPath;
 	private final Path toPath;
-	private final CopyOption[] COPY_OPTIONS = new CopyOption[]{
-	  StandardCopyOption.REPLACE_EXISTING,
-	  StandardCopyOption.COPY_ATTRIBUTES
-	};
 	/**
 	 * Constructor for CopyDirVisitor
 	 *
@@ -106,13 +102,11 @@ class CopyDirVisitor extends SimpleFileVisitor<Path> {
 			Logger.getLogger(GACOM).log(Level.SEVERE, "TERMINATING file visitor");
 			return FileVisitResult.TERMINATE;
 		}
+
 		ConfigurationsRepo configRepo = new ConfigurationsRepo();
 		Configurations config = configRepo.getOneOrCreateOne();
-		config.getFilters();
-		CommonUtil commonUtil = new CommonUtil();
 
-		System.out.println(file.getFileName().toString());
-		boolean ignore = commonUtil.checkIgnoreFiles(file.getFileName().toString(), config.getFilters());
+		boolean ignore = CommonUtil.checkIgnoreFiles(file.getFileName().toString(), config.getFilters());
 		if (!ignore) {
 			File destinationFile = new File(toPath.resolve(fromPath.relativize(file)).toString());
 			try {

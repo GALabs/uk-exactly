@@ -1024,9 +1024,7 @@ class BackgroundWorker extends SwingWorker<Integer, Void> {
 			this.parent.UpdateResult(result, 0);
 			file.delete();
 			Logger.getLogger(GACOM).log(Level.INFO, "Mail send result: {0}", result);
-		} catch (FileNotFoundException ex) {
-			Logger.getLogger(BackgroundWorker.class.getName()).log(Level.SEVERE, null, ex);
-		} catch (UnsupportedEncodingException ex) {
+		} catch (FileNotFoundException | UnsupportedEncodingException ex) {
 			Logger.getLogger(BackgroundWorker.class.getName()).log(Level.SEVERE, null, ex);
 		}
 
