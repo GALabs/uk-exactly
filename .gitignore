@@ -8,3 +8,5 @@ logfile.txt
 logfile.txt*
 nbproject/private
 .idea/
+/target/
+
