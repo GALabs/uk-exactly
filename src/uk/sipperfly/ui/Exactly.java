@@ -553,6 +553,8 @@ public class Exactly extends javax.swing.JFrame {
         );
 
         warning.setTitle("Warning");
+        warning.setAlwaysOnTop(true);
+        warning.setModal(true);
         warning.setMinimumSize(new java.awt.Dimension(450, 175));
         warning.setResizable(false);
 
@@ -2428,7 +2430,8 @@ public class Exactly extends javax.swing.JFrame {
 			return;
 		}
 		if (this.metadateUpdated == 0) {
-			this.warning.setVisible(true);
+		    this.warning.setLocationRelativeTo(this);
+            this.warning.setVisible(true);
 		} else {
 			this.jButton14ActionPerformed(evt);
 		}
