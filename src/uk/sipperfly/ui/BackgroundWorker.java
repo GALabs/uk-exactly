@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.SwingWorker;
@@ -87,6 +88,7 @@ import uk.sipperfly.persistent.BagInfo;
 import uk.sipperfly.persistent.SFTP;
 import uk.sipperfly.repository.SFTPRepo;
 import uk.sipperfly.utils.SFTPUtil;
+import static uk.sipperfly.utils.CommonUtil.copyFileAttributes;
 
 /**
  * This class implements the background worker thread.
@@ -729,12 +731,21 @@ class BackgroundWorker extends SwingWorker<Integer, Void> {
 				this.parent.UpdateResult("Serializing bag...", 0);
 				Logger.getLogger(GACOM).log(Level.INFO, "Serializing bag...");
 				ZipUtil.pack(new File(this.target.toString()), new File(this.target.toString().concat(".zip")));
-				try {
-					FileUtils.deleteDirectory(this.target.toFile());
-				}
-				catch(IOException e){
-					this.parent.UpdateResult("Failed to clean up directory. If you are sending directly to dropbox or something, you will need to manually delete the unzipped version of this yourself.", 0);
-				}
+                this.parent.UpdateResult("Cleaning up...", 0);
+                int count = 0;
+                int maxTries = 3;
+                while(true) {
+                    try {
+                        FileUtils.deleteDirectory(this.target.toFile());
+                        break;
+                    } catch (IOException e) {
+                        this.parent.UpdateResult("Retrying Delete...", 0);
+                        TimeUnit.SECONDS.sleep(3);
+                        if (++count == maxTries) {
+                            this.parent.UpdateResult("Failed to clean up directory. If you are sending directly to dropbox or something similar, you will need to manually delete the unzipped version of this yourself.", 0);
+                        };
+                    }
+                }
 			}
 		} catch (IOException | UnparsableVersionException | VerificationException | MaliciousPathException | MissingPayloadManifestException | UnsupportedAlgorithmException | CorruptChecksumException | MissingBagitFileException | InvalidBagitFileFormatException | MissingPayloadDirectoryException | InterruptedException | FileNotInPayloadDirectoryException ex) {
 			Logger.getLogger(GACOM).log(Level.SEVERE, "Error closing the bag", ex);
@@ -782,11 +793,6 @@ class BackgroundWorker extends SwingWorker<Integer, Void> {
 	 */
 	public Path TransferFiles() throws Exception {
 		FileTransfer ft = new FileTransfer(parent);
-		int extra = 0;
-//		if (this.parent.serializeBag.isSelected()) {
-//			extra = 10;
-//		}
-//		int totalFiles = this.parent.totalFiles;
 		if (this.totalTries == 1) {
 			System.out.println("this.totalTries == " + this.totalTries);
 			Logger.getLogger(GACOM).log(Level.INFO, "Max Progress bar count: ".concat(Integer.toString(this.parent.totalFiles)));
@@ -807,19 +813,26 @@ class BackgroundWorker extends SwingWorker<Integer, Void> {
 			}
 			this.parent.jProgressBar2.setMaximum(this.totalFiles);
 		}
-		for (String source : this.sources) {
-			File sourceFile = new File(source);
-			File folder = new File(sourceFile.getName());
-			Path folderTarget = this.commonUtil.combine(Paths.get(this.target.toString(), "data"), folder.toPath());
-			if (!Files.exists(folderTarget)) {
-				Files.createDirectories(folderTarget);
-			}
-			ft.setTargetPath(folderTarget);
-			this.parent.UpdateResult("Transfering files...", 0);
-			Path inputSource = sourceFile.toPath();
-			ft.setSourcePath(inputSource);
-			ft.Perform();
-
+        Path folderTarget = Paths.get(this.target.toString(), "data");
+        if (!Files.exists(folderTarget)) {
+            Files.createDirectories(folderTarget);
+        }
+        int index = 0;
+        for (String source : this.sources) {
+            this.parent.UpdateResult(String.format("(%s/%s)Transfering files...", ++index, this.sources.size()), 0);
+            File sourceFile = new File(source);
+            Path targetPath = CommonUtil.combine(folderTarget, new File(sourceFile.getName()).toPath());
+            if(sourceFile.isDirectory()){
+                Files.createDirectories(targetPath);
+            }
+            ft.setTargetPath(targetPath);
+            Path inputSource = sourceFile.toPath();
+            ft.setSourcePath(inputSource);
+            ft.Perform();
+            if(sourceFile.isDirectory()){
+                //restore the original attrs (including last modified date which would have just been modified)
+                copyFileAttributes(sourceFile.toPath(), targetPath);
+            }
 		}
 		return target;
 	}

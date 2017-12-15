@@ -26,6 +26,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.AclFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.DosFileAttributes;
+import java.nio.file.attribute.PosixFileAttributes;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
@@ -722,5 +726,54 @@ public class CommonUtil {
             }
         }
         return out;
+    }
+
+    public static void copyFileAttributes(Path source, Path destination){
+        //Copy Basic File Attributes
+        try {
+            BasicFileAttributes attr = Files.readAttributes(source, BasicFileAttributes.class);
+            Files.setAttribute(destination, "basic:creationTime", attr.creationTime());
+            Files.setAttribute(destination, "basic:lastAccessTime", attr.lastAccessTime());
+            Files.setAttribute(destination, "basic:lastModifiedTime", attr.lastModifiedTime());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        //Copy DOS File Attributes
+        try {
+            DosFileAttributes attr =
+                    Files.readAttributes(source, DosFileAttributes.class);
+            Files.setAttribute(destination, "dos:readonly", attr.isReadOnly());
+            Files.setAttribute(destination, "dos:hidden", attr.isHidden());
+            Files.setAttribute(destination, "dos:archive", attr.isArchive());
+            Files.setAttribute(destination, "dos:system", attr.isSystem());
+        } catch (UnsupportedOperationException | IOException e) {
+            System.err.println("DOS file" +
+                    " attributes not supported:" + e);
+        }
+        //Copy POSIX File Attributes
+        try {
+            PosixFileAttributes attrs =
+                    Files.readAttributes(source, PosixFileAttributes.class);
+            System.out.println(attrs.group());
+            System.out.println(attrs.permissions());
+            System.out.println(attrs.owner());
+            Files.setAttribute(destination, "posix:permissions", attrs.permissions());
+            Files.setAttribute(destination, "posix:group", attrs.group());
+        }
+        catch (Exception e) {
+            System.err.println("POSIX file" +
+                    " attributes not supported:" + e);
+        }
+        //Copy ACL File Attributes
+        try {
+            AclFileAttributeView aclFileAttributes = Files.getFileAttributeView(
+                    source, AclFileAttributeView.class);
+            Files.setAttribute(destination, "acl:acl", aclFileAttributes.getAcl());
+            Files.setAttribute(destination, "acl:owner", aclFileAttributes.getOwner());
+        }
+        catch (Exception e){
+            System.err.println("ACL file" +
+                    " attributes not supported:" + e);
+        }
     }
 }
