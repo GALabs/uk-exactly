@@ -1,4 +1,4 @@
-/* 
+/*
  * Exactly
  * Author: Nouman Tayyab (nouman@avpreserve.com)
  * Author: Rimsha Khalid (rimsha@avpreserve.com)
@@ -12,18 +12,22 @@
  */
 package uk.sipperfly.ui;
 
-import java.io.IOException;
+import java.io.*;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.file.CopyOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import uk.sipperfly.persistent.Configurations;
 import uk.sipperfly.repository.ConfigurationsRepo;
 import static uk.sipperfly.ui.Exactly.GACOM;
+
 import uk.sipperfly.utils.CommonUtil;
 
 /**
@@ -36,7 +40,10 @@ class CopyDirVisitor extends SimpleFileVisitor<Path> {
 	private final Exactly parent;
 	private final Path fromPath;
 	private final Path toPath;
-
+	private final CopyOption[] COPY_OPTIONS = new CopyOption[]{
+	  StandardCopyOption.REPLACE_EXISTING,
+	  StandardCopyOption.COPY_ATTRIBUTES
+	};
 	/**
 	 * Constructor for CopyDirVisitor
 	 *
@@ -75,6 +82,7 @@ class CopyDirVisitor extends SimpleFileVisitor<Path> {
 		Path targetPath = toPath.resolve(fromPath.relativize(dir));
 		if (!Files.exists(targetPath)) {
 			Files.createDirectory(targetPath);
+			copyFileAttributes(dir, targetPath);
 		}
 		return FileVisitResult.CONTINUE;
 	}
@@ -106,13 +114,81 @@ class CopyDirVisitor extends SimpleFileVisitor<Path> {
 		System.out.println(file.getFileName().toString());
 		boolean ignore = commonUtil.checkIgnoreFiles(file.getFileName().toString(), config.getFilters());
 		if (!ignore) {
-			Files.copy(file, toPath.resolve(fromPath.relativize(file)), REPLACE_EXISTING);
+			File destinationFile = new File(toPath.resolve(fromPath.relativize(file)).toString());
+			try {
+				copyFileUsingFileChannels(file.toFile(), destinationFile);
+				copyFileAttributes(file, destinationFile.toPath());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 			this.parent.tranferredFiles = this.parent.tranferredFiles + 1;
 			this.parent.UpdateProgressBar(this.parent.tranferredFiles);
-			
 		}
 		Logger.getLogger(GACOM).log(Level.INFO, "Count of Files: ".concat(Integer.toString(this.parent.tranferredFiles)));
 
 		return FileVisitResult.CONTINUE;
+	}
+
+	private static void copyFileUsingFileChannels(File source, File destinationFile)
+			throws IOException {
+        FileChannel outputChannel = new RandomAccessFile(destinationFile, "rw").getChannel();
+        FileLock lock = outputChannel.lock();
+        try (FileChannel inputChannel = new FileInputStream(source).getChannel()) {
+            outputChannel.transferFrom(inputChannel, 0, inputChannel.size());
+        } finally {
+            if (lock != null) {
+                lock.release();
+            }
+            outputChannel.close();
+        }
+	}
+
+	private static void copyFileAttributes(Path source, Path destination){
+		//Copy Basic File Attributes
+		try {
+			BasicFileAttributes attr = Files.readAttributes(source, BasicFileAttributes.class);
+			Files.setAttribute(destination, "basic:creationTime", attr.creationTime());
+			Files.setAttribute(destination, "basic:lastAccessTime", attr.lastAccessTime());
+			Files.setAttribute(destination, "basic:lastModifiedTime", attr.lastModifiedTime());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		//Copy DOS File Attributes
+		try {
+			DosFileAttributes attr =
+					Files.readAttributes(source, DosFileAttributes.class);
+			Files.setAttribute(destination, "dos:readonly", attr.isReadOnly());
+			Files.setAttribute(destination, "dos:hidden", attr.isHidden());
+			Files.setAttribute(destination, "dos:archive", attr.isArchive());
+			Files.setAttribute(destination, "dos:system", attr.isSystem());
+		} catch (UnsupportedOperationException | IOException e) {
+			System.err.println("DOS file" +
+					" attributes not supported:" + e);
+		}
+		//Copy POSIX File Attributes
+		try {
+			PosixFileAttributes attrs =
+					Files.readAttributes(source, PosixFileAttributes.class);
+			System.out.println(attrs.group());
+			System.out.println(attrs.permissions());
+			System.out.println(attrs.owner());
+			Files.setAttribute(destination, "posix:permissions", attrs.permissions());
+			Files.setAttribute(destination, "posix:group", attrs.group());
+		}
+		catch (Exception e) {
+			System.err.println("POSIX file" +
+					" attributes not supported:" + e);
+		}
+		//Copy ACL File Attributes
+		try {
+			AclFileAttributeView aclFileAttributes = Files.getFileAttributeView(
+					source, AclFileAttributeView.class);
+			Files.setAttribute(destination, "acl:acl", aclFileAttributes.getAcl());
+			Files.setAttribute(destination, "acl:owner", aclFileAttributes.getOwner());
+		}
+		catch (Exception e){
+			System.err.println("ACL file" +
+					" attributes not supported:" + e);
+		}
 	}
 }
