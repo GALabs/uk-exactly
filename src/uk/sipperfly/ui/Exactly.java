@@ -115,6 +115,7 @@ public class Exactly extends javax.swing.JFrame {
 		ImageIcon img = new ImageIcon(Exactly.class.getClass().getResource("/uk/sipperfly/ui/resources/Exactly-logo.png"));
 		this.setIconImage(img.getImage());
 		this.about.setIconImage(img.getImage());
+		this.jScrollPane3.getVerticalScrollBar().setUnitIncrement(16);
 		String osName = System.getProperty("os.name").toLowerCase();
 		boolean isMacOs = osName.startsWith("mac os x");
 		try {
@@ -554,8 +555,8 @@ public class Exactly extends javax.swing.JFrame {
 
         warning.setTitle("Warning");
         warning.setAlwaysOnTop(true);
-        warning.setModal(true);
         warning.setMinimumSize(new java.awt.Dimension(450, 175));
+        warning.setModal(true);
         warning.setResizable(false);
 
         jLabel8.setFont(new java.awt.Font("Verdana", 0, 12)); // NOI18N
@@ -641,12 +642,11 @@ public class Exactly extends javax.swing.JFrame {
         jPanel5.setPreferredSize(new java.awt.Dimension(600, 543));
 
         jScrollPane3.setPreferredSize(new java.awt.Dimension(571, 511));
-        jScrollPane3.getVerticalScrollBar().setUnitIncrement(16);
 
         jPanel1.setAutoscrolls(true);
 
         jLabel49.setFont(new java.awt.Font("Verdana", 0, 13)); // NOI18N
-        jLabel49.setText("    Destination");
+        jLabel49.setText("Destination");
         jLabel49.setMaximumSize(new java.awt.Dimension(96, 17));
         jLabel49.setMinimumSize(new java.awt.Dimension(96, 17));
         jLabel49.setPreferredSize(new java.awt.Dimension(96, 17));
@@ -901,7 +901,7 @@ public class Exactly extends javax.swing.JFrame {
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(jButton11))))
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addContainerGap()
+                        .addGap(20, 20, 20)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanel1Layout.createSequentialGroup()
                                 .addComponent(jLabel49, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -928,7 +928,7 @@ public class Exactly extends javax.swing.JFrame {
                                 .addComponent(showTransfer)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(hideTransfer)))))
-                .addContainerGap(41, Short.MAX_VALUE))
+                .addContainerGap(58, Short.MAX_VALUE))
             .addComponent(jPanel11, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         jPanel1Layout.setVerticalGroup(
@@ -956,9 +956,9 @@ public class Exactly extends javax.swing.JFrame {
                     .addComponent(editInputDir1, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnDirChoose1)
                     .addComponent(jLabel49, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(21, 21, 21)
+                .addGap(37, 37, 37)
                 .addComponent(jProgressBar2, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(34, 34, 34)
+                .addGap(18, 18, 18)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(show)
                     .addComponent(hide, javax.swing.GroupLayout.PREFERRED_SIZE, 14, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -967,7 +967,7 @@ public class Exactly extends javax.swing.JFrame {
                     .addComponent(showTransfer))
                 .addGap(18, 18, 18)
                 .addComponent(jPanel11, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGap(152, 152, 152))
+                .addGap(92, 92, 92))
         );
 
         jScrollPane3.setViewportView(jPanel1);
