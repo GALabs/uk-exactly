@@ -554,6 +554,7 @@ class BackgroundWorker extends SwingWorker<Integer, Void> {
 		// get the drop location path from database.
 		Path targetDirPath = new File(this.config.getDropLocation()).toPath();
 		// create it if it doesn't exist
+		targetDirPath = Paths.get(targetDirPath.toString(), this.target.getFileName().toString());
 		if (!Files.exists(targetDirPath)) {
 			Files.createDirectory(targetDirPath);
 		}
@@ -730,8 +731,8 @@ class BackgroundWorker extends SwingWorker<Integer, Void> {
 			if (this.parent.serializeBag.isSelected()) {
 				this.parent.UpdateResult("Serializing bag...", 0);
 				Logger.getLogger(GACOM).log(Level.INFO, "Serializing bag...");
-				ZipUtil.pack(new File(this.target.toString()), new File(this.target.toString().concat(".zip")));
-                retryDelete(this.target.toAbsolutePath().toString());
+				ZipUtil.pack(new File(this.target.getParent().toString()), new File(this.target.getParent().toString().concat(".zip")));
+                retryDelete(this.target.getParent().toAbsolutePath().toString());
 			}
 		} catch (IOException | UnparsableVersionException | VerificationException | MaliciousPathException | MissingPayloadManifestException | UnsupportedAlgorithmException | CorruptChecksumException | MissingBagitFileException | InvalidBagitFileFormatException | MissingPayloadDirectoryException | InterruptedException | FileNotInPayloadDirectoryException ex) {
 			Logger.getLogger(GACOM).log(Level.SEVERE, "Error closing the bag", ex);
@@ -799,7 +800,7 @@ class BackgroundWorker extends SwingWorker<Integer, Void> {
 			}
 			this.parent.jProgressBar2.setMaximum(this.totalFiles);
 		}
-        Path folderTarget = Paths.get(this.target.toString(), "data");
+        Path folderTarget = Paths.get(this.target.toString(),"data");
         if (!Files.exists(folderTarget)) {
             Files.createDirectories(folderTarget);
         }
@@ -1038,14 +1039,14 @@ class BackgroundWorker extends SwingWorker<Integer, Void> {
 	public int ValidateBag(String path) {
 		Path rootDir = Paths.get(path);
 		BagReader reader = new BagReader();
-		Bag bag = null;
+		Bag bag;
 		String unzippedPath = null;
 		boolean requiresCleanUp = false;
 		try {
-			if(path.endsWith(".zip") && ZipUtil.containsEntry(new File(path), "bag-info.txt")) {
+			if(path.toLowerCase().endsWith(".zip")) {
 				unzippedPath = path.replace(".zip", "");
 				ZipUtil.unpack(new File(path), new File(unzippedPath));
-				rootDir = Paths.get(unzippedPath);
+				rootDir = Paths.get(unzippedPath, Paths.get(unzippedPath).getFileName().toString());
 				requiresCleanUp = true;
 			}
 			bag = reader.read(rootDir);
@@ -1067,29 +1068,6 @@ class BackgroundWorker extends SwingWorker<Integer, Void> {
 		return 1;
 	}
 
-	public void retryDelete(String path){
-		this.parent.UpdateResult("Cleaning up...", 0);
-
-		int count = 0;
-		int maxTries = 3;
-		while (true) {
-			try {
-				FileUtils.deleteDirectory(new File(path));
-				break;
-			} catch (IOException e) {
-				this.parent.UpdateResult("Retrying...", 0);
-				try {
-					TimeUnit.SECONDS.sleep(3);
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
-				}
-				if (++count == maxTries) {
-					this.parent.UpdateResult("Failed to clean up directory. If you are sending directly to dropbox or something similar, you will need to manually delete the unzipped version of this yourself.", 0);
-				}
-			}
-		}
-	}
-
 	/**
 	 * Recognize bag structure.
 	 *
@@ -1103,10 +1081,10 @@ class BackgroundWorker extends SwingWorker<Integer, Void> {
 		boolean requiresCleanUp = false;
 		int success = 1;
 		try {
-			if(path.endsWith(".zip") && ZipUtil.containsEntry(new File(path), "bag-info.txt")){
+			if(path.toLowerCase().endsWith(".zip")){
 				unzippedPath = path.replace(".zip","");
 				ZipUtil.unpack(new File(path), new File(unzippedPath));
-				rootDir = Paths.get(unzippedPath);
+				rootDir = Paths.get(unzippedPath, Paths.get(unzippedPath).getFileName().toString());
 				reader.read(rootDir);
 				requiresCleanUp = true;
 			}
@@ -1123,6 +1101,29 @@ class BackgroundWorker extends SwingWorker<Integer, Void> {
 			}
 		}
 		return success;
+	}
+
+	private void retryDelete(String path){
+		this.parent.UpdateResult("Cleaning up...", 0);
+
+		int count = 0;
+		int maxTries = 3;
+		while (true) {
+			try {
+				FileUtils.deleteDirectory(new File(path));
+				break;
+			} catch (IOException e) {
+				try {
+					TimeUnit.SECONDS.sleep(3);
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
+				if (++count == maxTries) {
+					this.parent.UpdateResult("Failed to clean up directory. If you are sending directly to dropbox or something similar, you will need to manually delete the unzipped version of this bag:", 0);
+					this.parent.UpdateResult(path, 0);
+				}
+			}
+		}
 	}
 
 	/**
